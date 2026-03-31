@@ -2,12 +2,10 @@ name: LinkedIn Content Engine
 
 on:
   schedule:
-    # 8 AM CST = 2 PM UTC — runs EVERY day (primary slot)
-    - cron: "0 14 * * *"
-    # 12 PM CST = 6 PM UTC — Tue-Sat only (peak engagement)
-    - cron: "0 18 * * 2-6"
-    # 5 PM CST = 11 PM UTC — Tue-Sat only (end-of-day scroll)
-    - cron: "0 23 * * 2-6"
+    # 8 AM CST = 2 PM UTC — Tue, Thu, Sat only (3x/week)
+    - cron: "0 14 * * 2"
+    - cron: "0 14 * * 4"
+    - cron: "0 14 * * 6"
   workflow_dispatch: # Allow manual trigger from GitHub UI
 
 jobs:
