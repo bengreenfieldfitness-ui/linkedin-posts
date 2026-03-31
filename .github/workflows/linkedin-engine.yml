@@ -1,0 +1,48 @@
+name: LinkedIn Content Engine
+
+on:
+  schedule:
+    # 8 AM CST = 2 PM UTC — runs EVERY day (primary slot)
+    - cron: "0 14 * * *"
+    # 12 PM CST = 6 PM UTC — Tue-Sat only (peak engagement)
+    - cron: "0 18 * * 2-6"
+    # 5 PM CST = 11 PM UTC — Tue-Sat only (end-of-day scroll)
+    - cron: "0 23 * * 2-6"
+  workflow_dispatch: # Allow manual trigger from GitHub UI
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r scripts/linkedin-engine/requirements.txt
+
+      - name: Restore state
+        uses: actions/cache@v4
+        with:
+          path: scripts/linkedin-engine/state.json
+          key: li-engine-state-${{ github.run_id }}
+          restore-keys: li-engine-state-
+
+      - name: Random delay (0-19 min) to vary post times
+        run: sleep $((RANDOM % 1140))
+
+      - name: Run pipeline
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          APIFY_API_KEY: ${{ secrets.APIFY_API_KEY }}
+          LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+          LINKEDIN_PERSON_URN: ${{ secrets.LINKEDIN_PERSON_URN }}
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+        run: python scripts/linkedin-engine/main.py

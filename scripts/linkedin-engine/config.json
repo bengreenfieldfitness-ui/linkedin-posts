@@ -1,0 +1,25 @@
+{
+  "discovery": {
+    "provider": "apify",
+    "queries_per_run": 3,
+    "max_posts_per_query": 10,
+    "min_reactions": 100,
+    "min_comments": 10,
+    "scoring": {
+      "reaction_velocity": 0.4,
+      "comment_rate": 0.3,
+      "repost_rate": 0.1,
+      "recency": 0.2
+    }
+  },
+  "publish": {
+    "platform": "linkedin",
+    "auto_publish": true,
+    "queue_size": 9,
+    "posts_per_run": 1
+  },
+  "model": "claude-sonnet-4-6",
+  "schedule": {
+    "times_cst": ["08:00", "12:00", "17:00"]
+  }
+}
