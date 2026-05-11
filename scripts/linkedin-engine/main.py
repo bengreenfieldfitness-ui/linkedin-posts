@@ -117,6 +117,60 @@ def slack_failure(system: str, error: str) -> bool:
 
 
 # ---------------------------------------------------------------------------
+# Airtable Testimonials
+# ---------------------------------------------------------------------------
+
+def fetch_airtable_testimonials(config: dict) -> list[str]:
+    """Fetch client testimonials from Airtable. Returns list of client_wins strings.
+    Silently skips if AIRTABLE_API_KEY is not set or fetch fails."""
+    api_key = os.getenv("AIRTABLE_API_KEY")
+    if not api_key:
+        log.info("AIRTABLE_API_KEY not set, skipping testimonial fetch")
+        return []
+
+    at = config.get("airtable", {})
+    base_id = at.get("base_id", "")
+    table_id = at.get("table_id", "")
+    name_field = at.get("name_field", "")
+    quote_field = at.get("quote_field", "")
+
+    if not all([base_id, table_id, name_field, quote_field]):
+        log.warning("Airtable config incomplete, skipping testimonial fetch")
+        return []
+
+    url = f"https://api.airtable.com/v0/{base_id}/{table_id}"
+    headers = {"Authorization": f"Bearer {api_key}"}
+    wins = []
+    offset = None
+
+    try:
+        while True:
+            params = {"fields[]": [name_field, quote_field], "pageSize": 100}
+            if offset:
+                params["offset"] = offset
+            resp = requests.get(url, headers=headers, params=params, timeout=30)
+            resp.raise_for_status()
+            data = resp.json()
+
+            for record in data.get("records", []):
+                fields = record.get("fields", {})
+                name = (fields.get(name_field) or "").strip()
+                quote = (fields.get(quote_field) or "").strip()
+                if name and quote:
+                    wins.append(f"{name}: '{quote}'")
+
+            offset = data.get("offset")
+            if not offset:
+                break
+
+        log.info("Fetched %d testimonials from Airtable", len(wins))
+        return wins
+    except Exception as e:
+        log.warning("Airtable testimonial fetch failed (non-fatal): %s", e)
+        return []
+
+
+# ---------------------------------------------------------------------------
 # Content Discovery via Apify
 # ---------------------------------------------------------------------------
 
@@ -1103,6 +1157,11 @@ def main():
     config = load_config()
     brand = load_brand()
     state = load_state()
+
+    # Pull testimonials live from Airtable (replaces static client_wins in brand.json)
+    airtable_wins = fetch_airtable_testimonials(config)
+    if airtable_wins:
+        brand["client_wins"] = airtable_wins
 
     log.info("=" * 60)
     log.info("LinkedIn Content Engine — starting run")

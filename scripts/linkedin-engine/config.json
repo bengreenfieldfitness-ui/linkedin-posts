@@ -21,5 +21,11 @@
   "model": "claude-sonnet-4-6",
   "schedule": {
     "times_cst": ["08:00", "12:00", "17:00"]
+  },
+  "airtable": {
+    "base_id": "appYla4ppDrjQmr4x",
+    "table_id": "tbl4x4vgzReVTgmdq",
+    "name_field": "fldLJtluR6lq0K8m8",
+    "quote_field": "fldpxqU7ErMo3P251"
   }
 }
